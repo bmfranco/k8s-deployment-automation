@@ -30,7 +30,7 @@ resource "aws_security_group" "k8s_sg" {
 
 resource "aws_instance" "k8s" {
   ami           = "ami-0c02fb55956c7d316"
-  instance_type = "t3.small"
+  instance_type = "t3.medium"
 
   key_name = var.key_name
 
