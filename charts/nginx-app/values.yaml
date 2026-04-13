@@ -1,0 +1,10 @@
+replicaCount: 1
+
+message: "Hello World"
+
+service:
+  type: ClusterIP
+  port: 80
+
+resources: {}
+
