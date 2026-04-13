@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch: 
+  workflow_dispatch:
 
 permissions:
   id-token: write
@@ -41,10 +41,18 @@ jobs:
       - name: Deploy via SSH
         run: |
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/key.pem ec2-user@${{ secrets.EC2_HOST }} << 'EOF'
-            cd ~/k8s-deployment-automation/charts/nginx-app
+
+            if [ ! -d "k8s-deployment-automation" ]; then
+              git clone https://github.com/bmfranco/k8s-deployment-automation.git
+            else
+              cd k8s-deployment-automation && git pull && cd ..
+            fi
+
+            cd k8s-deployment-automation/charts/nginx-app
 
             helm upgrade --install nginx . \
               --set image.repository=nginx \
               --set image.tag=1.25 \
-              --set message="Deploy manual via GitHub"
+              --set message="Deploy via CI - Commit $GITHUB_SHA"
+
           EOF
