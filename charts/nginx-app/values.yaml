@@ -1,10 +1,20 @@
 replicaCount: 1
 
-message: "Hello World"
+image:
+  repository: nginx
+  tag: "1.25"
+  pullPolicy: IfNotPresent
 
 service:
   type: ClusterIP
   port: 80
 
-resources: {}
+message: "Hello World"
 
+resources:
+  limits:
+    cpu: "200m"
+    memory: "256Mi"
+  requests:
+    cpu: "100m"
+    memory: "128Mi"

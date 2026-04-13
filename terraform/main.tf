@@ -34,6 +34,8 @@ resource "aws_instance" "k8s" {
 
   key_name = var.key_name
 
+  associate_public_ip_address = true
+
   vpc_security_group_ids = [aws_security_group.k8s_sg.id]
 
   user_data = file("user_data.sh")

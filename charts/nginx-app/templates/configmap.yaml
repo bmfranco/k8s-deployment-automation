@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ .Release.Name }}-html
+  name: nginx-config
 data:
   index.html: |
     <html>
