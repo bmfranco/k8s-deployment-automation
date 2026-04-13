@@ -42,6 +42,24 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/key.pem ec2-user@${{ secrets.EC2_HOST }} << 'EOF'
 
+            # Esperar ambiente pronto
+            echo "Aguardando cloud-init finalizar..."
+            while [ ! -f /var/lib/cloud/instance/boot-finished ]; do
+              sleep 5
+            done
+
+            # Garantir git
+            if ! command -v git &> /dev/null; then
+              sudo yum install -y git
+            fi
+
+            # Garantir minikube pronto
+            echo "Aguardando minikube..."
+            until kubectl get nodes &> /dev/null; do
+              sleep 10
+            done
+
+            # Clonar repo
             if [ ! -d "k8s-deployment-automation" ]; then
               git clone https://github.com/bmfranco/k8s-deployment-automation.git
             else
