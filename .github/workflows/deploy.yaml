@@ -18,6 +18,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
+      - name: Set short commit SHA
+        id: vars
+        run: echo "SHORT_SHA=${GITHUB_SHA::7}" >> $GITHUB_ENV
+
       - name: Helm Lint
         run: |
           cd charts/nginx-app
@@ -52,18 +56,15 @@ jobs:
               sleep 5
             done
 
-            # garantir git
             if ! command -v git &> /dev/null; then
               sudo yum install -y git
             fi
 
-            # aguardar Kubernetes
             echo "Aguardando Kubernetes..."
             until kubectl get nodes &> /dev/null; do
               sleep 10
             done
 
-            # clonar ou atualizar repo
             if [ ! -d "k8s-deployment-automation" ]; then
               git clone https://github.com/bmfranco/k8s-deployment-automation.git
             else
@@ -73,6 +74,6 @@ jobs:
             cd k8s-deployment-automation/charts/nginx-app
 
             helm upgrade --install nginx . \
-              --set message="Hello World - Deploy via CI/CD - Commit $GITHUB_SHA"
+              --set message="Hello World da AsapTech - Deploy realizado via CI/CD (Commit: $SHORT_SHA)"
 
           EOF
