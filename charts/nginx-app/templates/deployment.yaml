@@ -18,8 +18,12 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - containerPort: 80
+          volumeMounts:
+            - name: html
+              mountPath: /usr/share/nginx/html
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
-          env:
-            - name: MESSAGE
-              value: "{{ .Values.message }}"
+      volumes:
+        - name: html
+          configMap:
+            name: nginx-config

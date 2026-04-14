@@ -18,6 +18,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
+      - name: Helm Lint
+        run: |
+          cd charts/nginx-app
+          helm lint .
+
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -30,36 +35,13 @@ jobs:
           echo "${{ secrets.SSH_KEY }}" > ~/.ssh/key.pem
           chmod 600 ~/.ssh/key.pem
 
-      - name: Wait for EC2 (retry SSH)
-        run: |
-          for i in {1..10}; do
-            echo "Tentativa $i de conexão SSH..."
-            ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 -i ~/.ssh/key.pem ec2-user@${{ secrets.EC2_HOST }} "echo conectado" && break
-            sleep 15
-          done
+      - name: Wait for EC2
+        run: sleep 60
 
       - name: Deploy via SSH
         run: |
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/key.pem ec2-user@${{ secrets.EC2_HOST }} << 'EOF'
 
-            # Esperar ambiente pronto
-            echo "Aguardando cloud-init finalizar..."
-            while [ ! -f /var/lib/cloud/instance/boot-finished ]; do
-              sleep 5
-            done
-
-            # Garantir git
-            if ! command -v git &> /dev/null; then
-              sudo yum install -y git
-            fi
-
-            # Garantir minikube pronto
-            echo "Aguardando minikube..."
-            until kubectl get nodes &> /dev/null; do
-              sleep 10
-            done
-
-            # Clonar repo
             if [ ! -d "k8s-deployment-automation" ]; then
               git clone https://github.com/bmfranco/k8s-deployment-automation.git
             else
@@ -69,8 +51,6 @@ jobs:
             cd k8s-deployment-automation/charts/nginx-app
 
             helm upgrade --install nginx . \
-              --set image.repository=nginx \
-              --set image.tag=1.25 \
-              --set message="Deploy via CI - Commit $GITHUB_SHA"
+              --set message="Hello World - Deploy via CI/CD - Commit $GITHUB_SHA"
 
           EOF
