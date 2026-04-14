@@ -35,13 +35,35 @@ jobs:
           echo "${{ secrets.SSH_KEY }}" > ~/.ssh/key.pem
           chmod 600 ~/.ssh/key.pem
 
-      - name: Wait for EC2
-        run: sleep 60
+      - name: Wait for EC2 (retry SSH)
+        run: |
+          for i in {1..10}; do
+            echo "Tentativa $i de conexão SSH..."
+            ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 -i ~/.ssh/key.pem ec2-user@${{ secrets.EC2_HOST }} "echo conectado" && break
+            sleep 15
+          done
 
       - name: Deploy via SSH
         run: |
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/key.pem ec2-user@${{ secrets.EC2_HOST }} << 'EOF'
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/key.pem ec2-user@${{ secrets.EC2_HOST }} << EOF
 
+            echo "Aguardando cloud-init finalizar..."
+            while [ ! -f /var/lib/cloud/instance/boot-finished ]; do
+              sleep 5
+            done
+
+            # garantir git
+            if ! command -v git &> /dev/null; then
+              sudo yum install -y git
+            fi
+
+            # aguardar Kubernetes
+            echo "Aguardando Kubernetes..."
+            until kubectl get nodes &> /dev/null; do
+              sleep 10
+            done
+
+            # clonar ou atualizar repo
             if [ ! -d "k8s-deployment-automation" ]; then
               git clone https://github.com/bmfranco/k8s-deployment-automation.git
             else
