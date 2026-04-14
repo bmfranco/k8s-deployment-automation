@@ -4,7 +4,18 @@ Este projeto demonstra a criação de uma infraestrutura automatizada na AWS uti
 
 ---
 
-## Arquitetura
+##  Tecnologias Utilizadas
+
+![Terraform](https://img.shields.io/badge/IaC-Terraform-623CE4?style=for-the-badge\&logo=terraform)
+![Kubernetes](https://img.shields.io/badge/Kubernetes-Orchestration-326CE5?style=for-the-badge\&logo=kubernetes)
+![Helm](https://img.shields.io/badge/Helm-Package_Manager-0F1689?style=for-the-badge\&logo=helm)
+![AWS](https://img.shields.io/badge/AWS-Cloud-FF9900?style=for-the-badge\&logo=amazonaws)
+![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-CI/CD-2088FF?style=for-the-badge\&logo=githubactions)
+![Docker](https://img.shields.io/badge/Docker-Container-2496ED?style=for-the-badge\&logo=docker)
+
+---
+
+##  Arquitetura
 
 * EC2 provisionada via Terraform
 * Cluster Kubernetes com Minikube
@@ -15,19 +26,20 @@ Este projeto demonstra a criação de uma infraestrutura automatizada na AWS uti
 
 ---
 
-## Estrutura do Repositório
+##  Estrutura do Repositório
 
 ```
 .
 ├── terraform/              # Infraestrutura como código (IAC)(AWS)
 ├── charts/nginx-app        # Helm Chart da aplicação
 ├── .github/workflows       # Pipeline CI/CD
+├── docs/                   # Imagens do projeto
 ├── README.md
 ```
 
 ---
 
-## Provisionamento da Infraestrutura
+##  Provisionamento da Infraestrutura
 
 ### 1. Inicializar Terraform
 
@@ -52,7 +64,7 @@ Isso irá criar:
 
 ---
 
-## Autenticação (OIDC)
+## 🔐 Autenticação (OIDC)
 
 O projeto utiliza autenticação via OIDC no GitHub Actions.
 
@@ -67,7 +79,7 @@ O projeto utiliza autenticação via OIDC no GitHub Actions.
 
 ---
 
-## Pipeline CI/CD
+##  Pipeline CI/CD
 
 O pipeline executa automaticamente a cada push na branch `main`.
 
@@ -84,7 +96,7 @@ helm upgrade --install nginx .
 
 ---
 
-## Aplicação
+##  Aplicação
 
 A aplicação consiste em um Nginx com conteúdo dinâmico.
 
@@ -96,7 +108,7 @@ A mensagem exibida é injetada via Helm:
 
 ---
 
-## Validação
+##  Validação
 
 ### 1. Verificar pods
 
@@ -136,31 +148,20 @@ http://localhost:8080
 
 ---
 
-## 🖼️ Evidências
+##  Evidências
 
-### Bucket S3 (Terraform State)
+### ☁️ Bucket S3 (Terraform State)
 
-
-
-```
-docs/s3-bucket.png
-```
+![S3 Bucket](./docs/s3-bucket.png)
 
 ---
 
 ### 🚀 Deploy via CI/CD
 
-
-
-```
-docs/deploy.png
-```
+![Deploy](./docs/deploy.png)
 
 ---
 
-
----
-
-## 📌 Conclusão
+##  Conclusão
 
 Este projeto demonstra a integração completa entre infraestrutura, orquestração e automação de deploy, seguindo boas práticas modernas de DevOps.
