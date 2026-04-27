@@ -1,10 +1,10 @@
-# 🚀 Kubernetes Deployment Automation
+# Kubernetes Deployment Automation
 
-Este projeto demonstra a criação de uma infraestrutura automatizada na AWS utilizando Terraform, Kubernetes (Minikube), Helm e GitHub Actions com autenticação segura via OIDC.
+Este projeto demonstra a criação de uma infraestrutura 100% automatizada e reproduzível na AWS utilizando Terraform, Kubernetes (Minikube), Helm e GitHub Actions com autenticação segura via OIDC.
 
 ---
 
-##  Tecnologias Utilizadas
+## Tecnologias Utilizadas
 
 ![Terraform](https://img.shields.io/badge/IaC-Terraform-623CE4?style=for-the-badge\&logo=terraform)
 ![Kubernetes](https://img.shields.io/badge/Kubernetes-Orchestration-326CE5?style=for-the-badge\&logo=kubernetes)
@@ -15,22 +15,23 @@ Este projeto demonstra a criação de uma infraestrutura automatizada na AWS uti
 
 ---
 
-##  Arquitetura
+## Arquitetura
 
 * EC2 provisionada via Terraform
-* Cluster Kubernetes com Minikube
+* Cluster Kubernetes com Minikube (iniciado automaticamente via systemd)
 * Deploy da aplicação via Helm
 * Pipeline CI/CD com GitHub Actions
-* Backend remoto do Terraform em S3 (com versionamento)
-* Autenticação segura via OIDC (sem uso de access keys)
+* Backend remoto do Terraform em S3 com versionamento
+* Autenticação via OIDC (sem uso de access keys)
 
 ---
 
-##  Estrutura do Repositório
+## Estrutura do Repositório
 
 ```
 .
-├── terraform/              # Infraestrutura como código (IAC)(AWS)
+├── bootstrap/              # Criação do bucket S3 (backend)
+├── terraform/              # Infraestrutura principal (EC2 + Kubernetes)
 ├── charts/nginx-app        # Helm Chart da aplicação
 ├── .github/workflows       # Pipeline CI/CD
 ├── docs/                   # Imagens do projeto
@@ -39,56 +40,75 @@ Este projeto demonstra a criação de uma infraestrutura automatizada na AWS uti
 
 ---
 
-##  Provisionamento da Infraestrutura
+## Provisionamento da Infraestrutura
 
-### 1. Inicializar Terraform
+### 1. Criar bucket S3 (backend Terraform)
 
 ```bash
-cd terraform
+cd bootstrap
 terraform init
+terraform apply
+```
+
+Copie o valor do output:
+
+```
+bucket_name = <nome-gerado>
 ```
 
 ---
 
-### 2. Aplicar infraestrutura
+### 2. Inicializar Terraform com backend remoto
+
+```bash
+cd ../terraform
+
+terraform init \
+  -backend-config="bucket=<nome-do-bucket>"
+```
+
+---
+
+### 3. Provisionar infraestrutura
 
 ```bash
 terraform apply
 ```
 
-Isso irá criar:
+Isso irá criar automaticamente:
 
-* EC2 com Docker + Minikube + Kubectl + Helm
+* EC2 com Docker, Minikube, Kubectl e Helm
+* Key Pair gerada automaticamente
 * Security Group
-* Backend remoto em S3
+* Cluster Kubernetes pronto para uso
 
 ---
 
-## 🔐 Autenticação (OIDC)
+## Autenticação (OIDC)
 
 O projeto utiliza autenticação via OIDC no GitHub Actions.
 
 * O GitHub assume uma role IAM na AWS
 * A trust policy restringe o acesso ao repositório
 
-### Benefícios:
+### Benefícios
 
 * Maior segurança
 * Sem vazamento de credenciais
-* Prática recomendada pela AWS
+* Sem uso de access keys
 
 ---
 
-##  Pipeline CI/CD
+## Pipeline CI/CD
 
 O pipeline executa automaticamente a cada push na branch `main`.
 
-### Etapas:
+### Etapas
 
 1. Validação do Helm Chart (`helm lint`)
 2. Autenticação na AWS via OIDC
 3. Conexão SSH com a EC2
-4. Deploy com Helm:
+4. Deploy com Helm
 
 ```bash
 helm upgrade --install nginx .
@@ -96,7 +116,7 @@ helm upgrade --install nginx .
 
 ---
 
-##  Aplicação
+## Aplicação
 
 A aplicação consiste em um Nginx com conteúdo dinâmico.
 
@@ -108,9 +128,34 @@ A mensagem exibida é injetada via Helm:
 
 ---
 
-##  Validação
+## Validação
 
-### 1. Verificar pods
+### 1. Acessar a EC2
+
+```bash
+terraform output -raw private_key > k8s-key.pem
+chmod 600 k8s-key.pem
+
+ssh -i k8s-key.pem ec2-user@$(terraform output -raw public_ip)
+```
+
+---
+
+### 2. Verificar cluster Kubernetes
+
+```bash
+kubectl get nodes
+```
+
+Saída esperada:
+
+```
+minikube   Ready
+```
+
+---
+
+### 3. Verificar pods
 
 ```bash
 kubectl get pods
@@ -118,9 +163,7 @@ kubectl get pods
 
 ---
 
-### 2. Acessar aplicação
-
-Como o serviço é do tipo ClusterIP, utilize port-forward:
+### 4. Acessar aplicação
 
 ```bash
 kubectl port-forward svc/nginx 8080:80
@@ -134,34 +177,28 @@ http://localhost:8080
 
 ---
 
-##  Acesso remoto (via SSH)
+## Acesso remoto via túnel SSH
 
 ```bash
 ssh -i k8s-key.pem -L 8080:localhost:8080 ec2-user@<EC2_PUBLIC_IP>
 ```
 
-Depois:
-
-```
-http://localhost:8080
-```
-
 ---
 
-##  Evidências
+## Evidências
 
-### ☁️ Bucket S3 (Terraform State)
+### Bucket S3 (Terraform State)
 
 ![S3 Bucket](./docs/s3-bucket.png)
 
 ---
 
-### 🚀 Deploy via CI/CD
+### Deploy via CI/CD
 
 ![Deploy](./docs/deploy.png)
 
 ---
 
-##  Conclusão
+## Conclusão
 
-Este projeto demonstra a integração completa entre infraestrutura, orquestração e automação de deploy, seguindo boas práticas modernas de DevOps.
+Este projeto foi desenvolvido com foco em reprodutibilidade, automação e boas práticas de DevOps, garantindo que toda a infraestrutura possa ser provisionada em qualquer conta AWS sem necessidade de configurações manuais.
