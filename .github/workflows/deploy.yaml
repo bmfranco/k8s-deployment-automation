@@ -15,6 +15,28 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Configurar ambiente Minikube
+        run: |
+          echo "Configurando kubeconfig..."
+
+          export KUBECONFIG=/home/ec2-user/.kube/config
+
+          kubectl config use-context minikube
+
+      - name: Aguardar Minikube
+        run: |
+          echo "Waiting for Minikube cluster..."
+
+          export KUBECONFIG=/home/ec2-user/.kube/config
+
+          for i in {1..20}; do
+            kubectl get nodes && break
+            echo "Cluster not ready yet..."
+            sleep 10
+          done
+
+          kubectl get nodes
+
       - name: Helm Lint
         run: |
           cd charts/nginx-app
@@ -22,7 +44,11 @@ jobs:
 
       - name: Deploy com Helm
         run: |
+          export KUBECONFIG=/home/ec2-user/.kube/config
+
           cd charts/nginx-app
 
           helm upgrade --install nginx . \
+            --namespace default \
+            --create-namespace \
             --set message="Hello World da AsapTech - Deploy realizado via CI/CD (Commit: ${GITHUB_SHA})"
