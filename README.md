@@ -113,14 +113,92 @@ Essa mensagem é injetada no `index.html` via ConfigMap.
 
 ---
 
+## Validação
+
+Como o Service está configurado como ClusterIP, a aplicação não é exposta externamente. A validação deve ser realizada diretamente na instância EC2.
+
+### 1. Acessar a instância via SSM
+
+```bash
+aws ssm start-session --target <INSTANCE_ID>
+```
+
+---
+
+### 2. Verificar se o Minikube está rodando
+
+```bash
+minikube status
+```
+
+Saída esperada:
+
+```
+host: Running
+kubelet: Running
+apiserver: Running
+```
+
+---
+
+### 3. Verificar cluster Kubernetes
+
+```bash
+kubectl get nodes
+```
+
+Saída esperada:
+
+```
+minikube   Ready
+```
+
+---
+
+### 4. Verificar pods em execução
+
+```bash
+kubectl get pods
+```
+
+Saída esperada:
+
+```
+nginx-xxxxx   1/1   Running
+```
+
+---
+
+### 5. Validar a aplicação
+
+```bash
+kubectl port-forward svc/nginx 8080:80
+```
+
+Em outro terminal na mesma instância:
+
+```bash
+curl localhost:8080
+```
+
+Saída esperada:
+
+```html
+<html>
+  <body>
+    <h1>Hello World da AsapTech - Deploy realizado via CI/CD (Commit: ...)</h1>
+  </body>
+</html>
+```
+
+---
 
 ## Decisões Técnicas
 
-- Uso de Service do tipo ClusterIP 
-- Exposição da aplicação via port-forward para validação local  
+- Uso de Service do tipo ClusterIP  
+- Exposição da aplicação via port-forward para validação interna  
 - Utilização de runner self-hosted para execução do pipeline diretamente na EC2  
 - Separação entre bootstrap (S3) e infraestrutura principal  
-  
 
 ---
 
