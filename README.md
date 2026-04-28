@@ -68,10 +68,29 @@ terraform init \
 
 ---
 
-### 3. Provisionar ambiente
+### 3. Gerar token do GitHub (necessário para o runner)
+
+No repositório do GitHub:
+
+1. Acesse **Settings**
+2. Vá em **Actions → Runners**
+3. Clique em **New self-hosted runner**
+4. Copie o token gerado
+
+⚠️ O token expira em poucos minutos, então utilize imediatamente.
+
+---
+
+### 4. Provisionar ambiente
 
 ```bash
-terraform apply
+terraform apply -var="github_runner_token=<SEU_TOKEN>"
+```
+
+Exemplo:
+
+```bash
+terraform apply -var="github_runner_token=XXXXXXXX"
 ```
 
 Recursos criados automaticamente:
@@ -206,15 +225,11 @@ Saída esperada:
 
 ### Backend Terraform (S3)
 
-O bucket S3 utilizado como backend remoto do Terraform foi criado com versionamento habilitado:
-
 ![S3 Bucket](./docs/s3-bucket.png)
 
 ---
 
 ### Execução do Pipeline CI/CD
-
-Execução do workflow no GitHub Actions realizando deploy via Helm no runner self-hosted:
 
 ![Pipeline Deploy](./docs/deploy.png)
 
