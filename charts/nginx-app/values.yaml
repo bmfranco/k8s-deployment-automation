@@ -2,7 +2,7 @@ replicaCount: 1
 
 image:
   repository: nginx
-  tag: "1.25"
+  tag: "1.16"
   pullPolicy: IfNotPresent
 
 service:
@@ -12,9 +12,9 @@ service:
 message: "Hello World"
 
 resources:
-  limits:
-    cpu: "200m"
-    memory: "256Mi"
   requests:
     cpu: "100m"
     memory: "128Mi"
+  limits:
+    cpu: "200m"
+    memory: "256Mi"

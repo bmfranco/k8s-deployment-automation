@@ -1,16 +1,18 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: nginx
+  name: {{ .Release.Name }}
+  labels:
+    app: {{ .Release.Name }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app: nginx
+      app: {{ .Release.Name }}
   template:
     metadata:
       labels:
-        app: nginx
+        app: {{ .Release.Name }}
     spec:
       containers:
         - name: nginx
@@ -26,4 +28,4 @@ spec:
       volumes:
         - name: html
           configMap:
-            name: nginx-config
+            name: {{ .Release.Name }}-config
