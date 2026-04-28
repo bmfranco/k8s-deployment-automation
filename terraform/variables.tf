@@ -1,4 +1,5 @@
-variable "key_name" {
-  description = "Nome da chave SSH"
+variable "github_runner_token" {
+  description = "GitHub runner registration token"
   type        = string
+  sensitive   = true
 }

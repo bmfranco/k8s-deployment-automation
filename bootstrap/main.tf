@@ -7,7 +7,7 @@ resource "random_id" "suffix" {
 }
 
 resource "aws_s3_bucket" "tf_state" {
-  bucket = "k8s-deployment-automation-${random_id.suffix.hex}"
+  bucket = "k8s-tf-state-${random_id.suffix.hex}"
 
   tags = {
     Name = "terraform-state"
