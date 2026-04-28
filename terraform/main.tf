@@ -87,7 +87,8 @@ resource "aws_instance" "k8s" {
   ]
 
   user_data_base64 = base64encode(templatefile("${path.module}/user_data.sh", {
-    runner_token = var.github_runner_token
+    github_runner_token = var.github_runner_token
+    github_repo         = var.github_repo
   }))
 
   tags = {

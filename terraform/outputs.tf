@@ -3,17 +3,7 @@ output "public_ip" {
   value       = aws_instance.k8s.public_ip
 }
 
-output "ssh_command" {
-  description = "Comando para acessar via SSH"
-  value       = "ssh ec2-user@${aws_instance.k8s.public_ip}"
-}
-
-output "ssm_command" {
-  description = "Comando para acessar via AWS SSM"
-  value       = "aws ssm start-session --target ${aws_instance.k8s.id}"
-}
-
-output "app_url_minikube" {
-  description = "URL da aplicação (via minikube service)"
-  value       = "Execute: minikube service nginx --url"
+output "github_actions_role_arn" {
+  description = "ARN da role usada pelo GitHub Actions via OIDC"
+  value       = aws_iam_role.github_actions.arn
 }
