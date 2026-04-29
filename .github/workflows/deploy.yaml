@@ -40,10 +40,15 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Terraform Init
+        run: |
+          cd terraform
+          terraform init \
+            -backend-config="bucket=${{ vars.TF_STATE_BUCKET }}"
+
       - name: Terraform Apply
         run: |
           cd terraform
-          terraform init
           terraform apply -auto-approve
         env:
           TF_VAR_github_runner_token: ${{ steps.runner_token.outputs.token }}
@@ -51,7 +56,7 @@ jobs:
       - name: Aguardar Minikube
         run: |
           echo "Waiting for Minikube to be ready..."
-          for i in {1..10}; do
+          for i in {1..12}; do
             if minikube status | grep -q "Running"; then
               echo "Minikube is ready"
               break
