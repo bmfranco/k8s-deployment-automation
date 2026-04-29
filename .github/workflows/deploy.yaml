@@ -52,6 +52,7 @@ jobs:
           terraform apply -auto-approve
         env:
           TF_VAR_github_runner_token: ${{ steps.runner_token.outputs.token }}
+          TF_VAR_github_repo: ${{ github.repository }}
 
       - name: Aguardar Minikube
         run: |
