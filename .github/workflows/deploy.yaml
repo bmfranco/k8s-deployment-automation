@@ -8,6 +8,8 @@ on:
       - 'README.md'
       - 'docs/**'
 
+  workflow_dispatch:
+
 jobs:
   deploy:
     runs-on: self-hosted
