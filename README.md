@@ -15,6 +15,41 @@ Este projeto demonstra a criação de uma infraestrutura automatizada e reproduz
 
 ---
 
+## Pré-requisitos
+
+Antes de iniciar, certifique-se de que possui os seguintes itens configurados:
+
+### Ferramentas
+
+- AWS CLI 
+- Terraform 
+- Git
+- Bash ou terminal compatível
+
+### Configuração da AWS
+
+- Conta ativa na AWS  
+- Credenciais configuradas via AWS CLI:
+
+    aws configure
+
+Ou via variáveis de ambiente:
+
+    export AWS_ACCESS_KEY_ID=<SUA_ACCESS_KEY>
+    export AWS_SECRET_ACCESS_KEY=<SUA_SECRET_KEY>
+    export AWS_DEFAULT_REGION=us-east-1
+
+### Permissões necessárias
+
+O usuário/role da AWS deve possuir permissões para:
+
+- EC2 (criação e gerenciamento de instâncias)
+- IAM (criação de roles e policies)
+- S3 (criação e gerenciamento de buckets)
+- SSM (acesso à instância via Session Manager)
+
+---
+
 ## Explicação do projeto
 
 ### Arquitetura
