@@ -1,6 +1,6 @@
 # Kubernetes Deployment Automation
 
-Este projeto demonstra a criação de uma infraestrutura totalmente automatizada e reproduzível na AWS, utilizando Terraform, Kubernetes (Minikube), Helm e GitHub Actions com runner self-hosted.
+Este projeto demonstra a criação de uma infraestrutura automatizada e reproduzível na AWS, utilizando Terraform, Kubernetes (Minikube), Helm e GitHub Actions com runner self-hosted.
 
 ---
 
@@ -15,85 +15,153 @@ Este projeto demonstra a criação de uma infraestrutura totalmente automatizada
 
 ---
 
-## Arquitetura
+## Explicação do projeto
+
+### Arquitetura
 
 - EC2 provisionada via Terraform  
-- Cluster Kubernetes com Minikube inicializado automaticamente via user_data  
+- Cluster Kubernetes com Minikube inicializado via user_data  
 - Runner self-hosted do GitHub Actions executando na EC2  
-- Deploy automatizado da aplicação via Helm  
+- Deploy automatizado via Helm  
 - Backend remoto do Terraform em S3 com versionamento  
 
 ---
 
-## Estrutura do Repositório
+### Estrutura do projeto
 
-```
-.
-├── bootstrap/              # Criação do bucket S3 (backend Terraform)
-├── terraform/              # Infraestrutura principal (EC2 + Kubernetes)
-├── charts/nginx-app        # Helm Chart da aplicação
-├── .github/workflows       # Pipeline CI/CD
-├── docs/                   # Evidências do projeto
-└── README.md
-```
+    .
+    ├── .github/             # Configuração do GitHub Actions
+    ├── bootstrap/           # Criação do bucket S3 (backend Terraform)
+    ├── charts/              # Helm Charts (nginx-app)
+    ├── terraform/           # Infraestrutura principal (EC2 + Kubernetes)
+    ├── docs/                # Evidências do projeto
+    ├── .gitignore
+    └── README.md
 
 ---
 
-## Provisionamento da Infraestrutura
+### Autenticação com OIDC
 
-### 1. Criar bucket S3 (backend Terraform)
+O projeto utiliza OIDC (OpenID Connect) para autenticação entre GitHub Actions e AWS.
 
-```bash
-cd bootstrap
-terraform init
-terraform apply
-```
+Funcionamento:
+
+- O GitHub Actions solicita um token OIDC temporário  
+- A AWS valida esse token  
+- O pipeline assume uma role IAM  
+- Não há uso de Access Keys ou Secrets  
+
+Benefícios:
+
+- Maior segurança  
+- Eliminação de credenciais fixas  
+- Integração nativa com AWS  
+
+Restrição configurada:
+
+    repo:<SEU_USUARIO>/<SEU_REPOSITORIO>:*
+
+---
+
+### Pipeline CI/CD
+
+Etapas do pipeline:
+
+1. Checkout do código  
+2. Aguardar inicialização do Minikube  
+3. Validação do Helm Chart (`helm lint`)  
+4. Deploy da aplicação via Helm  
+
+    helm upgrade --install nginx .
+
+---
+
+### Decisão arquitetural
+
+O Terraform não é executado dentro do pipeline.
+
+Motivo:
+
+- O runner está hospedado na própria EC2 provisionada  
+- Executar Terraform poderia destruir a instância em uso  
+
+Solução adotada:
+
+- Terraform → provisionamento manual  
+- CI/CD → apenas deploy da aplicação  
+
+---
+
+### Aplicação
+
+A aplicação é um Nginx configurado via Helm.
+
+Mensagem dinâmica:
+
+    --set message="Hello World - Deploy realizado via CI/CD (Commit: <SHA>)"
+
+---
+
+## Como utilizar o projeto
+
+### 1. Clonar o repositório
+
+    git clone https://github.com/<SEU_USUARIO>/<SEU_REPOSITORIO>.git
+    cd <SEU_REPOSITORIO>
+
+---
+
+### 2. Criar bucket S3 (backend do Terraform)
+
+    cd bootstrap
+    terraform init
+    terraform apply
 
 Copie o output:
 
-```
-bucket_name = <nome-gerado>
-```
+    bucket_name = <nome-do-bucket>
 
 ---
 
-### 2. Inicializar Terraform com backend remoto
+### 3. Inicializar Terraform com backend remoto
 
-```bash
-cd ../terraform
+    cd ../terraform
 
-terraform init \
-  -backend-config="bucket=<nome-do-bucket>"
-```
+    terraform init \
+      -backend-config="bucket=<nome-do-bucket>"
 
 ---
 
-### 3. Gerar token do GitHub (necessário para o runner)
+### 4. Configurar variáveis do Terraform
 
-No repositório do GitHub:
+Crie o arquivo:
+
+    terraform/terraform.tfvars
+
+Conteúdo:
+
+    github_repo = "<SEU_USUARIO>/<SEU_REPOSITORIO>"
+
+---
+
+### 5. Gerar token do GitHub (runner)
+
+No repositório:
 
 1. Acesse **Settings**
 2. Vá em **Actions → Runners**
 3. Clique em **New self-hosted runner**
-4. Copie o token gerado
+4. Copie o token
 
-⚠️ O token expira em poucos minutos, então utilize imediatamente.
+⚠️ O token expira em poucos minutos.
 
 ---
 
-### 4. Provisionar ambiente
+### 6. Provisionar infraestrutura
 
-```bash
-terraform apply -var="github_runner_token=<SEU_TOKEN>"
-```
+    terraform apply -var="github_runner_token=<SEU_TOKEN>"
 
-Exemplo:
-
-```bash
-terraform apply -var="github_runner_token=XXXXXXXX"
-```
-
-Recursos criados automaticamente:
+Isso irá criar automaticamente:
 
 - EC2 com Docker, Minikube, Kubectl e Helm  
 - Runner self-hosted configurado automaticamente  
@@ -101,123 +169,67 @@ Recursos criados automaticamente:
 
 ---
 
-## Pipeline CI/CD
+### 7. Configurar variáveis no GitHub
 
-O pipeline é executado automaticamente a cada push na branch `main`.
+No repositório:
 
-### Etapas
+1. Acesse **Settings**
+2. Vá em **Secrets and variables → Actions → Variables**
+3. Crie a seguinte variável:
 
-1. Checkout do código  
-2. Validação do Helm Chart (`helm lint`)  
-3. Configuração do acesso ao cluster Kubernetes (Minikube)  
-4. Deploy da aplicação via Helm  
+    AWS_ROLE_ARN = arn:aws:iam::<ACCOUNT_ID>:role/github-actions-role
 
-```bash
-helm upgrade --install nginx .
-```
+Esse valor é obtido no output do Terraform:
 
----
-
-## Aplicação
-
-A aplicação consiste em um Nginx com conteúdo dinâmico configurado via Helm.
-
-A mensagem exibida é definida por parâmetro:
-
-```bash
---set message="Hello World da AsapTech - Deploy realizado via CI/CD (Commit: <SHA>)"
-```
-
-Essa mensagem é injetada no `index.html` via ConfigMap.
+    github_actions_role_arn = "arn:aws:iam::<ACCOUNT_ID>:role/github-actions-role"
 
 ---
 
-## Validação
+### 8. Executar o pipeline
 
-Como o Service está configurado como ClusterIP, a aplicação não é exposta externamente. A validação deve ser realizada diretamente na instância EC2.
+#### Automático (push na branch main)
 
-### 1. Acessar a instância via SSM
+    git add .
+    git commit -m "trigger pipeline"
+    git push
 
-```bash
-aws ssm start-session --target <INSTANCE_ID>
-```
+#### Manual (via interface do GitHub)
+
+- Acesse **Actions**
+- Selecione o workflow **Deploy**
+- Clique em **Run workflow**
 
 ---
 
-### 2. Verificar se o Minikube está rodando
+### 9. Validar a aplicação
 
-```bash
-minikube status
-```
+Acesse a EC2 via SSM:
+
+    aws ssm start-session --target <INSTANCE_ID>
+
+Verificar cluster:
+
+    kubectl get nodes
+
+Verificar pods:
+
+    kubectl get pods
+
+Executar port-forward:
+
+    kubectl port-forward svc/nginx 8080:80
+
+Em outro terminal:
+
+    curl localhost:8080
 
 Saída esperada:
 
-```
-host: Running
-kubelet: Running
-apiserver: Running
-```
-
----
-
-### 3. Verificar cluster Kubernetes
-
-```bash
-kubectl get nodes
-```
-
-Saída esperada:
-
-```
-minikube   Ready
-```
-
----
-
-### 4. Verificar pods em execução
-
-```bash
-kubectl get pods
-```
-
-Saída esperada:
-
-```
-nginx-xxxxx   1/1   Running
-```
-
----
-
-### 5. Validar a aplicação
-
-```bash
-kubectl port-forward svc/nginx 8080:80
-```
-
-Em outro terminal na mesma instância:
-
-```bash
-curl localhost:8080
-```
-
-Saída esperada:
-
-```html
-<html>
-  <body>
-    <h1>Hello World da AsapTech - Deploy realizado via CI/CD (Commit: ...)</h1>
-  </body>
-</html>
-```
-
----
-
-## Decisões Técnicas
-
-- Uso de Service do tipo ClusterIP  
-- Exposição da aplicação via port-forward para validação interna  
-- Utilização de runner self-hosted para execução do pipeline diretamente na EC2  
-- Separação entre bootstrap (S3) e infraestrutura principal  
+    <html>
+      <body>
+        <h1>Hello World da AsapTech - Deploy realizado via CI/CD (Commit: ...)</h1>
+      </body>
+    </html>
 
 ---
 
@@ -229,7 +241,7 @@ Saída esperada:
 
 ---
 
-### Execução do Pipeline CI/CD
+### Pipeline CI/CD
 
 ![Pipeline Deploy](./docs/deploy.png)
 
