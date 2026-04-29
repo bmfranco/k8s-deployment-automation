@@ -8,11 +8,6 @@ on:
       - 'README.md'
       - 'docs/**'
 
-permissions:
-  id-token: write
-  contents: read
-  actions: write
-
 jobs:
   deploy:
     runs-on: self-hosted
@@ -20,39 +15,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Configure AWS credentials (OIDC)
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
-          aws-region: us-east-1
-
-      - name: Gerar token do runner
-        id: runner_token
-        run: |
-          TOKEN=$(curl -s -X POST \
-            -H "Authorization: Bearer $GITHUB_TOKEN" \
-            -H "Accept: application/vnd.github+json" \
-            https://api.github.com/repos/${{ github.repository }}/actions/runners/registration-token \
-            | jq -r .token)
-
-          echo "token=$TOKEN" >> $GITHUB_OUTPUT
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Terraform Init
-        run: |
-          cd terraform
-          terraform init \
-            -backend-config="bucket=${{ vars.TF_STATE_BUCKET }}"
-
-      - name: Terraform Apply
-        run: |
-          cd terraform
-          terraform apply -auto-approve
-        env:
-          TF_VAR_github_runner_token: ${{ steps.runner_token.outputs.token }}
-          TF_VAR_github_repo: ${{ github.repository }}
 
       - name: Aguardar Minikube
         run: |
