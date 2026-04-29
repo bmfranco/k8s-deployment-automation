@@ -7,7 +7,7 @@ exec > >(tee -a $LOG_FILE) 2>&1
 
 echo "===== START USER DATA ====="
 
-# Validar variáveis
+# VALIDAR VARIÁVEIS
 if [ -z "${github_runner_token}" ]; then
   echo "ERRO: github_runner_token vazio"
   exit 1
@@ -21,7 +21,11 @@ fi
 echo "===== INSTALL BASE DEPENDENCIES ====="
 
 dnf update -y
-dnf install -y docker git jq \
+dnf install -y \
+  docker \
+  git \
+  jq \
+  unzip \
   libicu \
   openssl \
   krb5-libs \
@@ -35,6 +39,20 @@ usermod -aG docker ec2-user
 
 echo "===== WAIT DOCKER ====="
 sleep 20
+
+echo "===== INSTALL TERRAFORM ====="
+
+cd /tmp
+
+curl -LO https://releases.hashicorp.com/terraform/1.7.5/terraform_1.7.5_linux_amd64.zip
+
+unzip terraform_1.7.5_linux_amd64.zip
+
+mv terraform /usr/local/bin/
+
+chmod +x /usr/local/bin/terraform
+
+terraform -version
 
 echo "===== INSTALL GITHUB RUNNER ====="
 
